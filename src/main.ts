@@ -1,5 +1,5 @@
 import {ConfigModule} from "@nestjs/config"
-import {getCaptchaPage, TelegramBotStart } from './main.controller';
+import {checkBooking, TelegramBotStart } from './main.controller';
 
 ConfigModule.forRoot({
     envFilePath: `.${process.env.NODE_ENV}.env`
@@ -7,10 +7,12 @@ ConfigModule.forRoot({
 
 
 async function bootstrap() {
-   setTimeout(() => console.log("1 sec"), 1000);
-  // setTimeout(() => getCaptchaPage(), 2000);
-  //getCaptchaPage();
-    TelegramBotStart();
+    // First check just after start
+    await checkBooking();
+
+    // Other checks
+    setInterval(() => checkBooking(), Number(process.env.REFRESH_TIME));
+   // TelegramBotStart();
 }
 
 bootstrap();
