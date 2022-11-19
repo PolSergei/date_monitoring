@@ -1,26 +1,19 @@
 import {AxiosError, AxiosResponse, Axios} from "axios";
 import TelegramBot = require("node-telegram-bot-api");
 
-// app.post('/in.php', function (req, res) {
-//     res.json({"status":1,"request":"2122988149"});
-//     // res.json({"status":0,"request":"ERROR_EMPTY_ACTION"});
-// })
-// app.get('/res.php', function(req, res) {
-//     res.json({"status":1,"request":"7bxmpg"});
-//     //res.json({"status":0,"request":"CAPCHA_NOT_READY"});
-// })
-
 export async function checkBooking() {
 
     const axios = require('axios');
 
     try {
-        let captchaPage = await axios.request({
+        const captchaPageUrl = process.env.TARGET_URL + '/rktermin/extern/appointment_showMonth.do?locationCode=tifl&realmId=744&categoryId=1344';
+        const captchaPage = await axios.request({
                                         method: 'get',
-                                        url: process.env.TARGET_URL,
+                                        url: captchaPageUrl,
                                         responseType: 'json'
                                         });
-        console.log(`Successful request to ${process.env.TARGET_URL}`);
+
+        console.log(`Successful request to ${captchaPageUrl}`);
         const responseData = captchaPage.data;
         const captchaImage = findCaptchaImage(responseData);
         const captchaText = await getRuCaptchaResult(captchaImage);
