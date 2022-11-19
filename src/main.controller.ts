@@ -1,4 +1,4 @@
-import {AxiosError, AxiosResponse, Axios} from "axios";
+import {AxiosError, AxiosResponse, Axios, AxiosRequestConfig} from "axios";
 import TelegramBot = require("node-telegram-bot-api");
 
 export async function checkBooking() {
@@ -13,10 +13,26 @@ export async function checkBooking() {
                                         responseType: 'json'
                                         });
 
-        console.log(`Successful request to ${captchaPageUrl}`);
+        console.log(`Successful GET request to ${captchaPageUrl}`);
+        const captchaPageCookie = getCookie(captchaPage.headers["set-cookie"]);
         const responseData = captchaPage.data;
+
         const captchaImage = findCaptchaImage(responseData);
         const captchaText = await getRuCaptchaResult(captchaImage);
+
+        const bookingPageUrl = process.env.TARGET_URL + '/rktermin/extern/appointment_showMonth.do';
+        const data = `captchaText=${captchaText}&rebooking=&token=&lastname=&firstname=&email=&locationCode=tifl&realmId=744&categoryId=1344&openingPeriodId=&date=&dateStr=&action%3Aappointment_showMonth=Continue`;
+        const bookingPage = await axios.request({
+            method: 'post',
+            headers: {Cookie: captchaPageCookie},
+            url: bookingPageUrl,
+            responseType: 'json',
+            data: data
+        });
+
+        console.log(bookingPage.headers);
+        console.log(bookingPage.data);
+
 
     } catch (e) {
         if(e instanceof AxiosError) {
@@ -79,7 +95,7 @@ export async function checkBooking() {
                         let reCaptchaResult = await axios.request({
                             method: 'get',
                             url: resultUrl,
-                            data: {
+                            params: {
                                 key: process.env.RECAPTCHA_KEY,
                                 action: 'get',
                                 id: ruCaptchaRequest.data.request,
@@ -120,6 +136,13 @@ export async function checkBooking() {
         }
 
         return result;
+    }
+
+    function getCookie(headers): string{
+        const jsessionid = headers[0].split(';')[0];
+        const keks = headers[1].split(';')[0];
+
+        return jsessionid + ';' + keks;
     }
 };
 
