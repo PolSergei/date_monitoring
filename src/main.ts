@@ -1,5 +1,8 @@
 import {ConfigModule} from "@nestjs/config"
 import {checkBooking, TelegramBotStart } from './main.controller';
+import {NestFactory} from "@nestjs/core";
+import {AppModule} from "./app.module";
+import * as cookieParser from "cookie-parser";
 
 ConfigModule.forRoot({
     envFilePath: `.${process.env.NODE_ENV}.env`
@@ -7,6 +10,11 @@ ConfigModule.forRoot({
 
 
 async function bootstrap() {
+    if(process.env.NODE_ENV == 'development'){
+        const app = await NestFactory.create(AppModule);
+        app.use(cookieParser());
+        app.listen(Number(process.env.TEST_PORT));
+    }
     // First check just after start
     await checkBooking();
 
