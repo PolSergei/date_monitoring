@@ -9,7 +9,7 @@ export class DateCheckerService {
     async startChecking() {
         console.log("DateChecker started");
 
-        this.telegramBot.TelegramBotStart();
+        this.telegramBot.Start();
 
         // First check just after start
         await this.checkAvailableDate();
@@ -18,7 +18,7 @@ export class DateCheckerService {
         setInterval(() => this.checkAvailableDate(), Number(process.env.REFRESH_TIME));
     }
 
-    async checkAvailableDate() {
+    private async checkAvailableDate() {
 
         const axios = require('axios');
 
@@ -61,6 +61,8 @@ export class DateCheckerService {
                 console.log(e);
             }
         }
+
+        this.telegramBot.EmitEvent();
 
         function findCaptchaImage(responseData: string): string {
             const startStr = 'url(\'data:image/jpg;base64,';

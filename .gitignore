@@ -37,3 +37,4 @@ lerna-debug.log*
 #Custom
 .development.env
 .production.env
+/list_chat_id.json
