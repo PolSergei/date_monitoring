@@ -31,6 +31,7 @@ export class TelegramBotService {
 
             console.log(text);
 
+            // todo стоит ли делать более удобный интерфейс боту
             try {
                 const subscibeCommand = `/subscribe ${this.subscribePassphrase}`;
                 if(text === subscibeCommand) {
