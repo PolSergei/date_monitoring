@@ -1,6 +1,6 @@
 import {Injectable} from '@nestjs/common';
 import {AxiosError} from "axios";
-import {TelegramBotService} from "../telegram-bot-service/telegram-bot.service";
+import {TelegramBotService} from "../telegram-bot.service";
 
 const axios = require('axios');
 
@@ -21,9 +21,10 @@ export class DateCheckerService {
         setInterval(() => this.checkAvailableDate(), Number(process.env.REFRESH_TIME));
     }
 
+    // todo Вынести методы
     private async checkAvailableDate() {
         try {
-            const captchaPageUrl = process.env.TARGET_URL + '/rktermin/extern/appointment_showMonth.do?locationCode=tifl&realmId=744&categoryId=1344';
+            const captchaPageUrl = process.env.EMBASSY_URL + '/rktermin/extern/appointment_showMonth.do?locationCode=tifl&realmId=744&categoryId=1344';
             const captchaPage = await axios.request({
                 method: 'get',
                 url: captchaPageUrl,
@@ -38,7 +39,7 @@ export class DateCheckerService {
             const captchaImage = DateCheckerService.findCaptchaImage(responseData);
             const captchaText = await DateCheckerService.getRuCaptchaResult(captchaImage);
 
-            const bookingPageUrl = process.env.TARGET_URL + '/rktermin/extern/appointment_showMonth.do';
+            const bookingPageUrl = process.env.EMBASSY_URL + '/rktermin/extern/appointment_showMonth.do';
             const data = `captchaText=${captchaText}&rebooking=&token=&lastname=&firstname=&email=&locationCode=tifl&realmId=744&categoryId=1344&openingPeriodId=&date=&dateStr=&action%3Aappointment_showMonth=Continue`;
             let bookingPage = await axios.request({
                 method: 'post',
@@ -59,7 +60,7 @@ export class DateCheckerService {
                 console.log("There aren't free dates on the first page.");
 
                 let nextPath = DateCheckerService.getNextPath(bookingPage.data);
-                let nextURL = `${process.env.TARGET_URL}/rktermin/${nextPath}`
+                let nextURL = `${process.env.EMBASSY_URL}/rktermin/${nextPath}`
 
                 bookingPage = await axios.request({
                     method: 'get',
@@ -102,7 +103,7 @@ export class DateCheckerService {
 
         } catch (e) {
             if (e instanceof AxiosError) {
-                console.log(`Error loading ${process.env.TARGET_URL}`);
+                console.log(`Error loading ${process.env.EMBASSY_URL}`);
             } else {
                 console.log(e);
             }
