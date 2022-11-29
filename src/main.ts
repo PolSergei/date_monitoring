@@ -5,9 +5,11 @@ import * as cookieParser from "cookie-parser";
 import {MainModule} from "./main.module";
 import {DateCheckerService} from "./date-checker/date-checker.service";
 
-ConfigModule.forRoot({
-    envFilePath: `.${process.env.NODE_ENV}.env`
-});
+if (process.env.NODE_ENV === 'development') {
+    ConfigModule.forRoot({
+        envFilePath: `.${process.env.NODE_ENV}.env`
+    });
+}
 
 
 async function bootstrap() {
