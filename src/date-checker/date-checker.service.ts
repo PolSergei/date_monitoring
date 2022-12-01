@@ -79,7 +79,7 @@ export class DateCheckerService {
                     console.log("There aren't free dates on the second page.");
 
                     nextPath = DateCheckerService.getNextPath(bookingPage.data);
-                    nextURL = `${process.env.TARGET_URL}/rktermin/${nextPath}`
+                    nextURL = `${process.env.EMBASSY_URL}/rktermin/${nextPath}`
 
                     bookingPage = await axios.request({
                         method: 'get',
