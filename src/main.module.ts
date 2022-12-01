@@ -4,6 +4,7 @@ import {TelegramBotService} from "./telegram-bot.service";
 
 @Module({
     providers: [DateCheckerService, TelegramBotService],
-    exports: [DateCheckerService]
+    exports: [DateCheckerService],
+    controllers: []
 })
 export class MainModule {}
