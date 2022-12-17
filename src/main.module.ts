@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import {DateCheckerService} from "./date-checker/date-checker.service";
+import {DateCheckerService} from "./date-checker.service";
 import {TelegramBotService} from "./telegram-bot.service";
+import {RuCaptchaService} from "./ru-captcha.service";
 
 @Module({
-    providers: [DateCheckerService, TelegramBotService],
+    providers: [DateCheckerService, TelegramBotService, RuCaptchaService],
     exports: [DateCheckerService],
     controllers: []
 })

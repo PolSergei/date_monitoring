@@ -1,16 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
-// app.post('/in.php', function (req, res) {
-//     res.json({"status":1,"request":"2122988149"});
-//     // res.json({"status":0,"request":"ERROR_EMPTY_ACTION"});
-// })
-// app.get('/res.php', function(req, res) {
-//     res.json({"status":1,"request":"7bxmpg"});
-//     //res.json({"status":0,"request":"CAPCHA_NOT_READY"});
-// })
-
+// Файл для тестирования.
 @Injectable()
-export class RucaptchaService {
+export class RuCaptchaService {
     setTask(): string {
         const data = {"status":1, "request":"2122988149"};
         //const data = {"status":0,"request":"ERROR_EMPTY_ACTION"};

@@ -2,6 +2,7 @@ import {Controller, Get, Post, Res} from '@nestjs/common';
 import {EmbassyService} from "./embassy.service";
 import {Response} from "express";
 
+// todo Переименовать этот и связанные с ним файлы, что бы было понятно что это тестовые данные
 @Controller('embassy')
 export class EmbassyController {
     constructor(readonly embassyService: EmbassyService) {
@@ -16,6 +17,8 @@ export class EmbassyController {
 
     @Post('/rktermin/extern/appointment_showMonth.do')
     datesPage(): string {
-        return this.embassyService.datesPage();
+        // return this.embassyService.datesPage();
+        // todo пока тестовый вариант
+        return this.embassyService.wrongCaptcha();
     }
 }

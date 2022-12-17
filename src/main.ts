@@ -1,13 +1,14 @@
 import {ConfigModule} from "@nestjs/config"
 import {NestFactory} from "@nestjs/core";
-import {TestBackModule} from "./testBackModule";
+import {TestBackModule} from "../test_data/test-back-module";
 import * as cookieParser from "cookie-parser";
 import {MainModule} from "./main.module";
-import {DateCheckerService} from "./date-checker/date-checker.service";
+import {DateCheckerService} from "./date-checker.service";
 
 if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'production') {
     ConfigModule.forRoot({
-        envFilePath: `.${process.env.NODE_ENV}.env`
+        envFilePath: `.${process.env.NODE_ENV}.env`,
+        isGlobal: true
     });
 }
 

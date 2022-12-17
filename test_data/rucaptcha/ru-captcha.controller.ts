@@ -1,9 +1,9 @@
 import {Controller, Get, Post} from '@nestjs/common';
-import {RucaptchaService} from "./rucaptcha.service";
+import {RuCaptchaService} from "./ru-captcha.service";
 
 @Controller('rucaptcha')
-export class RucaptchaController {
-    constructor(private readonly rucaptchaService: RucaptchaService) {}
+export class RuCaptchaController {
+    constructor(private readonly rucaptchaService: RuCaptchaService) {}
 
     @Get('res.php')
     getResult(): string {
