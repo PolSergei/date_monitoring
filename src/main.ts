@@ -13,13 +13,13 @@ if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'producti
 }
 
 async function bootstrap() {
-    let testPort = 3000;
-    if (process.env.NODE_ENV === 'development') {
-        testPort = Number(process.env.TEST_PORT);
+    let port = 3010;
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'production') {
+        port = Number(process.env.PORT);
     }
     const testBack = await NestFactory.create(TestBackModule);
     testBack.use(cookieParser());
-    await testBack.listen(testPort);
+    await testBack.listen(port);
 
     const mainModule = await NestFactory.createApplicationContext(MainModule);
     const dateChecker = mainModule.get(DateCheckerService);
