@@ -15,4 +15,17 @@ export class RuCaptchaService {
 
         return JSON.stringify(data);
     }
+
+    acceptedBadRequest(): string {
+        const data = {"status":1,"request":"OK_REPORT_RECORDED"};
+
+        return JSON.stringify(data);
+    }
+
+    acceptedGoodRequest(): string {
+        const data = {"status":1,"request":"OK_REPORT_RECORDED"};
+
+        return JSON.stringify(data);
+    }
+
 }

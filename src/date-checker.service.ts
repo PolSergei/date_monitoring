@@ -28,6 +28,8 @@ export class DateCheckerService {
 
             const objPageEmbassyService = new PageEmbassyService();
 
+            // дернуть это
+            // Блок 1
             const captchaImage = await objPageEmbassyService.loadCaptchaImage();
 
             const objRuCaptchaService = new RuCaptchaService();
@@ -36,14 +38,15 @@ export class DateCheckerService {
             await objPageEmbassyService.loadFirstBookingPage(captchaText);
 
             const isCaptchaValid = objPageEmbassyService.isCaptchaValid();
+            // end Блок1
 
             if (isCaptchaValid) {
-                // todo Продолжаем выполнение
+                await objRuCaptchaService.sendCaptchaGood();
             } else {
 
-                // todo: Отослать рукапче предъяву
+                await objRuCaptchaService.sendCaptchaBad();
                 // todo Найти новую капчу
-                // todo Послать новую капчу на проверку
+                // todo Послать новую капчу на проверку. Повторить в общем Блок1. В этом и затык, решить как это делать
             }
 
             let datesExist = objPageEmbassyService.isFreeDatesOnPage();
