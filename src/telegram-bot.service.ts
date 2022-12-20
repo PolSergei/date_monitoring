@@ -15,8 +15,6 @@ export class TelegramBotService {
 
     constructor() {
         const token = process.env.TELEGRAM_BOT_TOKEN;
-        const passphrase = process.env.TELEGRAM_BOT_PASSPHRASE;
-
         this.bot = new TelegramBot(token, {polling: true});
 
         console.log("TelegramBot created");
