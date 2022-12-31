@@ -8,11 +8,14 @@ const axios = require('axios');
 
 @Injectable()
 export class DateCheckerService {
-    constructor(private telegramBot: TelegramBotService) {
-    }
+    constructor(
+        private telegramBot: TelegramBotService,
+        private ruCaptcha: RuCaptchaService,
+        private embassy: PageEmbassyService
+    ) { }
 
     async startChecking() {
-        console.log("DateChecker started");
+        console.log("INFO: DateChecker started");
 
         this.telegramBot.Start();
 
@@ -25,65 +28,86 @@ export class DateCheckerService {
 
     private async checkAvailableDate() {
         try {
+            await this.passCaptcha();
 
-            const objPageEmbassyService = new PageEmbassyService();
-
-            // дернуть это
-            // Блок 1
-            const captchaImage = await objPageEmbassyService.loadCaptchaImage();
-
-            const objRuCaptchaService = new RuCaptchaService();
-            const captchaText = await objRuCaptchaService.getCaptcha(captchaImage);
-
-            await objPageEmbassyService.loadFirstBookingPage(captchaText);
-
-            const isCaptchaValid = objPageEmbassyService.isCaptchaValid();
-            // end Блок1
-
-            if (isCaptchaValid) {
-                await objRuCaptchaService.sendCaptchaGood();
-            } else {
-
-                await objRuCaptchaService.sendCaptchaBad();
-                // todo Найти новую капчу
-                // todo Послать новую капчу на проверку. Повторить в общем Блок1. В этом и затык, решить как это делать
-            }
-
-            let datesExist = objPageEmbassyService.isFreeDatesOnPage();
+            let datesExist = this.embassy.isFreeDatesOnPage();
 
             if (datesExist) {
+                console.log("INFO: Dates was found on the first page");
                 this.telegramBot.EmitEvent();
             } else {
-                console.log("There aren't free dates on the first page.");
+                console.log("INFO: There aren't free dates on the first page.");
 
-                await objPageEmbassyService.loadNextBookingPage();
+                await this.embassy.loadNextBookingPage();
 
-                datesExist = objPageEmbassyService.isFreeDatesOnPage();
+                datesExist = this.embassy.isFreeDatesOnPage();
 
                 if (datesExist) {
+                    console.log("INFO: Dates was found on the second page");
                     this.telegramBot.EmitEvent();
                 } else {
-                    console.log("There aren't free dates on the second page.");
+                    console.log("INFO: There aren't free dates on the second page.");
 
-                    await objPageEmbassyService.loadNextBookingPage();
+                    await this.embassy.loadNextBookingPage();
 
-                    datesExist = objPageEmbassyService.isFreeDatesOnPage();
+                    datesExist = this.embassy.isFreeDatesOnPage();
 
                     if (datesExist) {
+                        console.log("INFO: Dates was found on the third page");
                         this.telegramBot.EmitEvent();
                     } else {
-                        console.log("There aren't free dates on the third page.");
+                        console.log("INFO: There aren't free dates on the third page.");
                     }
                 }
-             }
+            }
 
         } catch (e) {
+            // if (e instanceof RuCaptchaAttemptsError){
+            //     console.log(e.message);
+            //     // todo Отправить сообщение в телеграмм
+            // } else
             if (e instanceof AxiosError) {
-                console.log(`Error loading ${process.env.EMBASSY_URL}`);
+                console.log(`Error loading page: ${e.config.url}`);
+                // todo Подумать нужно ли об этом информировать в телеге
             } else {
                 console.log(e);
             }
         }
     }
 
+    private async passCaptcha(){
+        await this.embassy.loadCaptchaPage();
+
+        const maxAttempts = 5;
+        let attempt = 0;
+        let isCaptchaValid = false;
+
+        do {
+            const captchaImage = this.embassy.findCaptchaImage();
+            const captchaText = await this.ruCaptcha.getCaptcha(captchaImage);
+
+            await this.embassy.loadFirstBookingPage(captchaText);
+            isCaptchaValid = this.embassy.isCaptchaValid();
+
+            if (isCaptchaValid) {
+                await this.ruCaptcha.sendCaptchaGood();
+            } else {
+                console.log("INFO: captcha isn't valid")
+                await this.ruCaptcha.sendCaptchaBad();
+            }
+
+            attempt++;
+        }while (!isCaptchaValid && attempt < maxAttempts)
+
+        if(!isCaptchaValid){
+            throw new RuCaptchaAttemptsError(`The captcha wasn't passed after ${maxAttempts} attempts.`);
+        }
+    }
+}
+
+class RuCaptchaAttemptsError extends Error {
+    constructor(message: string) {
+        super(message);
+        Object.setPrototypeOf(this, RuCaptchaAttemptsError.prototype);
+    }
 }

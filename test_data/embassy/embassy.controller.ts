@@ -17,8 +17,8 @@ export class EmbassyController {
 
     @Post('/rktermin/extern/appointment_showMonth.do')
     datesPage(): string {
-        // return this.embassyService.datesPage();
+        return this.embassyService.datesPage();
         // todo пока тестовый вариант
-        return this.embassyService.wrongCaptcha();
+        //return this.embassyService.wrongCaptcha();
     }
 }

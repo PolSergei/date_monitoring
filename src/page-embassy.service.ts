@@ -1,32 +1,65 @@
 import {Injectable} from "@nestjs/common";
+import {sleep} from "./utils";
+import {AxiosError, AxiosResponse} from "axios";
 
 const axios = require('axios');
 
 @Injectable()
 export class PageEmbassyService {
 
-    private _currentBookingPage: any;
-    private _cookie: string;
+    private currentPage: any;
+    private cookie: string;
 
-    public async loadCaptchaImage(): Promise<string> {
-        const captchaPage = await this.getCaptchaPage();
-        this.setCookie(captchaPage.headers["set-cookie"]);
-        const captchaImage = this.findCaptchaImage(captchaPage.data);
+    // todo может будет классно сделать функцию загрузчик
+    public async loadCaptchaPage() {
+        const captchaPageUrl = process.env.EMBASSY_URL + '/rktermin/extern/appointment_showMonth.do?locationCode=tifl&realmId=744&categoryId=1344';
+        const maxAttempts = 5;
+        const delay = 200;
+        let attempt = 0;
+        let isSuccessRequest = false;
 
-        return captchaImage;
+        do {
+            // todo Вынесу потом в отдельный метод
+            await axios.request({
+                method: 'get',
+                url: captchaPageUrl,
+                responseType: 'json',
+                headers: {'Accept-Language': 'en-US,en;q=0.9,ru;q=0.8'},
+            })
+                .then((captchaPage: AxiosResponse) => {
+                    isSuccessRequest = true;
+                    console.log(this);
+
+                    this.currentPage = captchaPage;
+                    this.setCookie(captchaPage.headers["set-cookie"]);
+                    console.log(`INFO: Successful GET request to ${captchaPageUrl}`);
+                })
+                .catch(async (e: AxiosError) => {
+                    attempt++;
+                    await sleep(delay);
+                });
+        }while (!isSuccessRequest && attempt < maxAttempts)
+
+        if(!isSuccessRequest){
+            throw Error(`ERROR: The captcha page ${captchaPageUrl} wasn't downloaded after ${maxAttempts} attempts.`)
+        }
     }
 
-    private findCaptchaImage(captchaPageData: string): string {
-        const startStr = 'url(\'data:image/jpg;base64,';
-        const pos1 = captchaPageData.indexOf(startStr) + startStr.length;
-        const pos2 = captchaPageData.indexOf('\') no-repeat scroll');
+    public findCaptchaImage(): string {
+        const captchaPageData = this.currentPage.data;
 
-        if (pos1 < pos2) {
-            const res = captchaPageData.slice(pos1, pos2);
-            console.log("Captcha image was found");
+        const startStr = 'url(\'data:image/jpg;base64,';
+        const pos1 = captchaPageData.indexOf(startStr) ;
+        const start = pos1 + startStr.length;
+
+        const end = captchaPageData.indexOf('\') no-repeat scroll');
+
+        if (pos1 !== -1 && end !== -1 && start < end) {
+            const res = captchaPageData.slice(start, end);
+            console.log("INFO: Captcha image was found");
             return res;
         } else {
-            throw("Error: Captcha image wasn't found");
+            throw("Error: A captcha image wasn't found");
         }
     }
 
@@ -34,52 +67,33 @@ export class PageEmbassyService {
         const jsessionid = headers[0].split(';')[0];
         const keks = headers[1].split(';')[0];
 
-        this._cookie = jsessionid + ';' + keks;
-
-        console.log('this._cookie', this._cookie);
+        this.cookie = jsessionid + ';' + keks;
     }
 
-    private async getCaptchaPage(): Promise<any> {
-
-        const captchaPageUrl = process.env.EMBASSY_URL + '/rktermin/extern/appointment_showMonth.do?locationCode=tifl&realmId=744&categoryId=1344';
-        const captchaPage = await axios.request({
-            method: 'get',
-            url: captchaPageUrl,
-            responseType: 'json',
-            headers: {'Accept-Language': 'en-US,en;q=0.9,ru;q=0.8'},
-        });
-
-        console.log(`Successful GET request to ${captchaPageUrl}`);
-
-        return captchaPage;
-    }
-
-    public async loadFirstBookingPage(captchaText: string): Promise<any> {
+    public async loadFirstBookingPage(captchaText: string){
         const bookingPageUrl = process.env.EMBASSY_URL + '/rktermin/extern/appointment_showMonth.do';
 
         const bookingPageRequestData = `captchaText=${captchaText}&rebooking=&token=&lastname=&firstname=&email=
             &locationCode=tifl&realmId=744&categoryId=1344&openingPeriodId=&date=&dateStr=
             &action%3Aappointment_showMonth=Continue`;
 
-        const firstbookingPage = await axios.request({
+        this.currentPage = await axios.request({
             method: 'post',
             headers: {
-                'Cookie': this._cookie,
+                'Cookie': this.cookie,
                 'Accept-Language': 'en-US,en;q=0.9,ru;q=0.8'
             },
             url: bookingPageUrl,
             responseType: 'json',
             data: bookingPageRequestData
         });
-
-        this._currentBookingPage = firstbookingPage;
     }
 
     public isFreeDatesOnPage(): boolean {
         const notDatesMessage = 'Unfortunately, there are no appointments available at this time. ' +
             'New appointments will be made available for booking at regular intervals.'
 
-        const datesNotExist = this._currentBookingPage.data.includes(notDatesMessage);
+        const datesNotExist = this.currentPage.data.includes(notDatesMessage);
 
         return !datesNotExist;
     }
@@ -98,35 +112,34 @@ export class PageEmbassyService {
 
         if (pos3 < pos4) {
             const res = page.slice(pos3, pos4);
-            console.log("Next URL:");
-            console.log(res);
+            console.log(`INFO: Next URL: ${res}`);
             return res;
         } else {
-            throw("Error: The next button URL haven't been found");
+            throw(Error("ERROR: The next button URL haven't been found"));
         }
     }
 
     public async loadNextBookingPage() {
-        const nextPath = this.getNextPath(this._currentBookingPage);
+        const nextPath = this.getNextPath(this.currentPage.data);
         const nextURL = `${process.env.EMBASSY_URL}/rktermin/${nextPath}`;
 
         const nextBookingPage = await axios.request({
             method: 'get',
             headers: {
-                'Cookie': this._cookie,
+                'Cookie': this.cookie,
                 'Accept-Language': 'en-US,en;q=0.9,ru;q=0.8'
             },
             url: nextURL,
             responseType: 'json',
         });
 
-        this._currentBookingPage = nextBookingPage;
+        this.currentPage = nextBookingPage;
     }
 
     public isCaptchaValid(): boolean {
         const captchaWrongStr = 'The entered text was wrong';
 
-        const isCaptchaWrong = this._currentBookingPage.data.includes(captchaWrongStr);
+        const isCaptchaWrong = this.currentPage.data.includes(captchaWrongStr);
 
         return !isCaptchaWrong;
     }

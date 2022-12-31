@@ -1,40 +1,42 @@
 import {Injectable} from "@nestjs/common";
 import {AxiosError, AxiosResponse} from "axios";
+import {sleep} from "./utils";
 
 const axios = require('axios');
 
 // TODO удалить префикс rucaptcha из названий методов
 @Injectable()
 export class RuCaptchaService {
+    private readonly taskUrl = process.env.RECAPTCHA_BASE_URL + '/in.php';
+    private readonly resultUrl = process.env.RECAPTCHA_BASE_URL + '/res.php';
 
-    private readonly _taskUrl = process.env.RECAPTCHA_BASE_URL + '/in.php';
-    private readonly _resultUrl = process.env.RECAPTCHA_BASE_URL + '/res.php';
-
-    private _tackId: string;
+    private tackId: string;
 
     public async getCaptcha(captchaImage: string): Promise<any> {
 
-        //todo Проверить работу задержек. Похоже что сломались
         const ruCaptchaRequestData = await this.setTask(captchaImage);
-        this._tackId = ruCaptchaRequestData.request;
 
         if (ruCaptchaRequestData && ruCaptchaRequestData.status === 1) {
-            console.log('Rucaptcha request number: ' + this._tackId);
-            return await this.getResult();
+            this.tackId = ruCaptchaRequestData.request;
+            console.log('INFO: RuCaptcha request number: ' + this.tackId);
+
+            const captchaText: string = await this.getResult();
+            console.log('INFO: RuCaptcha result: ' + captchaText);
+            return captchaText;
 
         } else {
-            throw(`${this._taskUrl} returned: ${JSON.stringify(ruCaptchaRequestData)}`);
+            throw(Error(`${this.taskUrl} returned: ${JSON.stringify(ruCaptchaRequestData)}`));
         }
     }
 
     public async sendCaptchaGood() {
         await axios.request({
             method: 'get',
-            url: this._resultUrl,
+            url: this.resultUrl,
             params: {
                 key: process.env.RECAPTCHA_KEY,
                 action: 'reportgood',
-                id: this._tackId,
+                id: this.tackId,
                 json: 1
             },
             responseType: 'json'
@@ -55,11 +57,11 @@ export class RuCaptchaService {
     public async sendCaptchaBad() {
         await axios.request({
             method: 'get',
-            url: this._resultUrl,
+            url: this.resultUrl,
             params: {
                 key: process.env.RECAPTCHA_KEY,
                 action: 'reportbad',
-                id: this._tackId,
+                id: this.tackId,
                 json: 1
             },
             responseType: 'json'
@@ -81,7 +83,7 @@ export class RuCaptchaService {
         let result = false;
         await axios.request({
             method: 'post',
-            url: this._taskUrl,
+            url: this.taskUrl,
             data: {
                 method: 'base64',
                 key: process.env.RECAPTCHA_KEY,
@@ -92,66 +94,49 @@ export class RuCaptchaService {
         })
             .then(function (resp: AxiosResponse) {
                 result = resp.data;
-            })
-            .catch(function (e: AxiosError) {
-                // todo Можно вызвать fall service
-                if (e instanceof AxiosError) {
-                    console.log(`Error loading ${this._taskUrl}`);
-                } else {
-                    console.log(e);
-                }
             });
 
+        // TODO сейчас если будет ошибка axios то она будет перехвачена вызывающим кодом, подумать стоит ли что-то добавить
         return result;
     }
 
     private async getResult(): Promise<any> {
-
-        //todo Над таймером и задержками нужно подумать
-
         let stopLoop = false;
         const maxAttempt = 10;
+        const delay = 5000;
         let attempt = 0;
+        let result;
 
-        while (!stopLoop && attempt < maxAttempt) {
-
-            try {
-                await axios.request({
-                    method: 'get',
-                    url: this._resultUrl,
-                    params: {
-                        key: process.env.RECAPTCHA_KEY,
-                        action: 'get',
-                        id: this._tackId,
-                        json: 1
-                    },
-                    responseType: 'json'
-                })
-                    .then(function (reCaptchaResult: AxiosResponse) {
-
-                        if (reCaptchaResult.data.status === 1) {
-                            console.log('Rucaptcha result: ' + reCaptchaResult.data.request);
-                            stopLoop = true;
-
-                            return reCaptchaResult.data.request;
-                        } else {
-                            // записать в лог JSON.stringify(reCaptchaResult.data) вызвать fall service
-                            // Сергей писал типо такого console.log(`At ${attempt + 1} attempt rucaptcha returned ${JSON.stringify(reCaptchaResult.data)}`);
+        do{
+            await axios.request({
+                method: 'get',
+                url: this.resultUrl,
+                params: {
+                    key: process.env.RECAPTCHA_KEY,
+                    action: 'get',
+                    id: this.tackId,
+                    json: 1
+                },
+                responseType: 'json'
+            })
+                .then(async (reCaptchaResult: AxiosResponse) => {
+                    if (reCaptchaResult.data.status === 1) {
+                        stopLoop = true;
+                        result = reCaptchaResult.data.request;
+                    } else {
+                        console.log(`INFO: RuCaptcha returned ${reCaptchaResult.data.request} at ${attempt + 1} attempt get result.`);
+                        attempt++;
+                        if (attempt >= maxAttempt) {
+                            throw(Error(`No result received after ${maxAttempt} attempts`));
                         }
-                    })
-                    .catch(function (e: AxiosError) {
-                        // todo Можно вызвать fall service
-                        // Сергей писал типо такого console.log(`Error loading ${_resultUrl} at ${attempt + 1} attempt`);
-                    });
-            } catch (e) {
-                console.log(`Error loading ${this._resultUrl} at ${attempt + 1} attempt`);
-            }
-            attempt++;
-        }
+                        await sleep(delay);
+                        // записать в лог JSON.stringify(reCaptchaResult.data) вызвать fall service
+                        // Сергей писал типо такого console.log(`At ${attempt + 1} attempt rucaptcha returned ${JSON.stringify(reCaptchaResult.data)}`);
+                    }
+                });
+        }while (!stopLoop)
 
-        if (attempt >= maxAttempt) {
-            throw(`No result received after ${maxAttempt} attempts`);
-        }
+        return result;
     }
 
 }

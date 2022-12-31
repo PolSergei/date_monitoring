@@ -11,7 +11,7 @@ export class RuCaptchaService {
 
     getResult(): string {
         const data = {"status":1,"request":"7bxmpg"};
-        // const data = {"status":0,"request":"CAPCHA_NOT_READY"};
+        //const data = {"status":0,"request":"CAPCHA_NOT_READY"};
 
         return JSON.stringify(data);
     }
