@@ -17,11 +17,11 @@ export class TelegramBotService {
         const token = process.env.TELEGRAM_BOT_TOKEN;
         this.bot = new TelegramBot(token, {polling: true});
 
-        console.log("TelegramBot created");
+        console.log("INFO: TelegramBot created");
     }
 
     Start() {
-        console.log("TelegramBot started");
+        console.log("INFO: TelegramBot started");
 
         this.bot.on('message', async msg => {
             const text = msg.text;
