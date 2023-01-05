@@ -28,7 +28,6 @@ export class PageEmbassyService {
             })
                 .then((captchaPage: AxiosResponse) => {
                     isSuccessRequest = true;
-                    console.log(this);
 
                     this.currentPage = captchaPage;
                     this.setCookie(captchaPage.headers["set-cookie"]);
