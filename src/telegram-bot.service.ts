@@ -12,7 +12,6 @@ export class TelegramBotService {
     private bot: TelegramBot;
     private storageFilePath = `${process.cwd()}/list_chat_id.json`;
     private subscribePassphrase: string = process.env.TELEGRAM_BOT_SUBSCRIBE_PASSPHRASE;
-    private listChats: Array<number> = [];
 
     constructor() {
         const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -62,49 +61,34 @@ export class TelegramBotService {
     }
 
     private UpdateChatIdStorage(chatId: number, action: ChatIdAction){
-        // let listChats: Array<number> = [];
-        //
-        // if(fs.existsSync( this.storageFilePath )) {
-        //     const contentFile = fs.readFileSync(this.storageFilePath);
-        //     listChats = JSON.parse(contentFile.toString());
-        //
-        //     const found = listChats.findIndex(element => element == chatId);
-        //
-        //     // Adding chartId in the existing file
-        //     if(action == ChatIdAction.store) {
-        //         if(found == -1) {
-        //             listChats.push(chatId);
-        //         }
-        //     }
-        //     // Removing chartId from the existing file
-        //     if(action == ChatIdAction.clear){
-        //         if(found != -1) {
-        //             delete listChats[found];
-        //         }
-        //     }
-        // }
-        // else {
-        //     // Adding chartId in a new file
-        //     if(action == ChatIdAction.store) {
-        //         listChats.push(chatId);
-        //     }
-        // }
-        //
-        // fs.writeFileSync(this.storageFilePath, JSON.stringify(listChats));
+        let listChats: Array<number> = [];
 
-        const found = this.listChats.findIndex(element => element == chatId);
+        if(fs.existsSync( this.storageFilePath )) {
+            const contentFile = fs.readFileSync(this.storageFilePath);
+            listChats = JSON.parse(contentFile.toString());
+
+            const found = listChats.findIndex(element => element == chatId);
 
             // Adding chartId in the existing file
             if(action == ChatIdAction.store) {
                 if(found == -1) {
-                    this.listChats.push(chatId);
+                    listChats.push(chatId);
                 }
             }
             // Removing chartId from the existing file
             if(action == ChatIdAction.clear){
                 if(found != -1) {
-                    delete this.listChats[found];
+                    delete listChats[found];
                 }
             }
+        }
+        else {
+            // Adding chartId in a new file
+            if(action == ChatIdAction.store) {
+                listChats.push(chatId);
+            }
+        }
+
+        fs.writeFileSync(this.storageFilePath, JSON.stringify(listChats));
     }
 }
