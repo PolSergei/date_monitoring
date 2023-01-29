@@ -7,25 +7,25 @@ export class RuCaptchaController {
     }
 
     @Get('res.php?')
-    getResult(@Query('action') action): string {
+    async getResult(@Query('action') action): Promise<string> {
         switch (action) {
             case 'get': {
-                return this.rucaptchaService.getResult();
+                return await this.rucaptchaService.getResult();
             }
             case 'reportbad': {
-                return this.rucaptchaService.acceptedBadRequest();
+                return await this.rucaptchaService.acceptedBadRequest();
             }
             case 'reportgood': {
-                return this.rucaptchaService.acceptedGoodRequest();
+                return await this.rucaptchaService.acceptedGoodRequest();
             }
             default: {
-                return this.rucaptchaService.getResult();
+                return await this.rucaptchaService.getResult();
             }
         }
     }
 
     @Post('in.php')
-    setTask(): string {
-        return this.rucaptchaService.setTask();
+    async setTask(): Promise<string> {
+        return await this.rucaptchaService.setTask();
     }
 }

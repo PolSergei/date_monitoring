@@ -3,6 +3,7 @@ import {AxiosError} from "axios";
 import {TelegramBotService} from "./telegram-bot.service";
 import {RuCaptchaService} from "./ru-captcha.service";
 import {PageEmbassyService} from "./page-embassy.service";
+import {Job, scheduleJob} from 'node-schedule';
 
 const axios = require('axios');
 
@@ -16,17 +17,17 @@ export class DateCheckerService {
 
     async startChecking() {
         console.log("INFO: DateChecker started");
+        const winkingFace = "\u{1F609}";
 
         this.telegramBot.Start();
 
-        // First check just after start
-        await this.checkAvailableDate();
+        const statusTelegramBotJob : Job = scheduleJob('0 0 18 * * * ', () =>  {this.telegramBot.TransmitMessage("I'm working instead of you " + winkingFace)});
 
-        // Other checks
-        setInterval(() => this.checkAvailableDate(), Number(process.env.REFRESH_TIME));
+        const mainJob : Job = scheduleJob('0 */10 * * * * ', () => {this.checkAvailableDate()});
     }
 
     private async checkAvailableDate() {
+        const availableMessage : string = 'There are available dates!';
         try {
             await this.passCaptcha();
 
@@ -34,7 +35,7 @@ export class DateCheckerService {
 
             if (datesExist) {
                 console.log("INFO: Dates was found on the first page");
-                this.telegramBot.EmitEvent();
+                this.telegramBot.TransmitMessage(availableMessage);
             } else {
                 console.log("INFO: There aren't free dates on the first page.");
 
@@ -44,7 +45,7 @@ export class DateCheckerService {
 
                 if (datesExist) {
                     console.log("INFO: Dates was found on the second page");
-                    this.telegramBot.EmitEvent();
+                    this.telegramBot.TransmitMessage(availableMessage);
                 } else {
                     console.log("INFO: There aren't free dates on the second page.");
 
@@ -54,7 +55,7 @@ export class DateCheckerService {
 
                     if (datesExist) {
                         console.log("INFO: Dates was found on the third page");
-                        this.telegramBot.EmitEvent();
+                        this.telegramBot.TransmitMessage(availableMessage);
                     } else {
                         console.log("INFO: There aren't free dates on the third page.");
                     }

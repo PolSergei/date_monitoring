@@ -46,13 +46,13 @@ export class TelegramBotService {
         })
     }
 
-    EmitEvent() {
+    TransmitMessage(message: string) {
         if(fs.existsSync( this.storageFilePath )) {
             const contentFile = fs.readFileSync(this.storageFilePath);
             let listChats: Array<number> = JSON.parse(contentFile.toString());
 
             for (let chatId of listChats) {
-                this.bot.sendMessage(chatId, 'There are available dates!');
+                this.bot.sendMessage(chatId, message);
             }
         }
         else {
