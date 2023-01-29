@@ -13,7 +13,8 @@ export class DateCheckerService {
         private telegramBot: TelegramBotService,
         private ruCaptcha: RuCaptchaService,
         private embassy: PageEmbassyService
-    ) { }
+    ) {
+    }
 
     async startChecking() {
         console.log("INFO: DateChecker started");
@@ -21,13 +22,17 @@ export class DateCheckerService {
 
         this.telegramBot.Start();
 
-        const statusTelegramBotJob : Job = scheduleJob('0 0 18 * * * ', () =>  {this.telegramBot.TransmitMessage("I'm working instead of you " + winkingFace)});
+        scheduleJob('0 0 18 * * * ', () => {
+            this.telegramBot.TransmitMessage("I'm working instead of you " + winkingFace)
+        });
 
-        const mainJob : Job = scheduleJob('0 */10 * * * * ', () => {this.checkAvailableDate()});
+        scheduleJob('0 */10 * * * * ', () => {
+            this.checkAvailableDate()
+        });
     }
 
     private async checkAvailableDate() {
-        const availableMessage : string = 'There are available dates!';
+        const availableMessage: string = 'There are available dates!';
         try {
             await this.passCaptcha();
 
@@ -76,7 +81,7 @@ export class DateCheckerService {
         }
     }
 
-    private async passCaptcha(){
+    private async passCaptcha() {
         await this.embassy.loadCaptchaPage();
 
         const maxAttempts = 5;
@@ -98,9 +103,9 @@ export class DateCheckerService {
             }
 
             attempt++;
-        }while (!isCaptchaValid && attempt < maxAttempts)
+        } while (!isCaptchaValid && attempt < maxAttempts)
 
-        if(!isCaptchaValid){
+        if (!isCaptchaValid) {
             throw new RuCaptchaAttemptsError(`The captcha wasn't passed after ${maxAttempts} attempts.`);
         }
     }
